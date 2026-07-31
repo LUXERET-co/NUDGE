@@ -10,7 +10,7 @@
 해야 할 일에 집중하도록 도와주는 브라우저 확장 프로그램입니다.
 
 Chrome과 Firefox를 지원하며,
-NAVER Whale 지원을 준비하고 있습니다.
+NAVER Whale도 지원합니다.
 
 <br>
 
@@ -166,31 +166,21 @@ youtu.be → youtube.com
 
 ---
 
-## <img src="./icons/chrome.svg" width="24"> Google Chrome
+## <img src="./icons/chrome.svg" width="24"> Google Chrome (심사중)
 
-1. 저장소를 다운로드하거나 Clone 합니다.
-2. `chrome://extensions` 접속
-3. 우측 상단 **개발자 모드 활성화**
-4. **압축해제된 확장 프로그램 로드** 클릭
-5. 프로젝트 폴더 선택
+[![Chrome 웹 스토어에서 설치](https://img.shields.io/badge/Chrome%20웹%20스토어에서%20설치-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](#)
 
 ---
 
-## <img src="./icons/firefox.svg" width="24"> Mozilla Firefox
+## <img src="./icons/firefox.svg" width="24"> Mozilla Firefox (심사중)
 
-1. 저장소를 다운로드하거나 Clone 합니다.
-2. `about:debugging#/runtime/this-firefox` 접속
-3. **임시 부가 기능 로드** 클릭
-4. `manifest.json` 선택
+[![Firefox 부가 기능에서 설치](https://img.shields.io/badge/Firefox%20부가%20기능에서%20설치-FF7139?style=for-the-badge&logo=firefoxbrowser&logoColor=white)](#)
 
 ---
 
-## <img src="./icons/whale.svg" width="24"> NAVER Whale
+## <img src="./icons/whale.svg" width="24"> NAVER Whale (심사중)
 
-> 🚧 현재 개발 중입니다.
-
-더 나은 사용 경험을 위해  
-NAVER Whale 지원을 준비하고 있습니다.
+[![네이버 웨일 스토어에서 설치](https://img.shields.io/badge/네이버%20웨일%20스토어에서%20설치-03C75A?style=for-the-badge&logo=naver&logoColor=white)](#)
 
 ---
 
