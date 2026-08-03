@@ -166,9 +166,9 @@ youtu.be → youtube.com
 
 ---
 
-## <img src="./icons/chrome.svg" width="24"> Google Chrome (심사중)
+## <img src="./icons/chrome.svg" width="24"> Google Chrome
 
-[![Chrome 웹 스토어에서 설치](https://img.shields.io/badge/Chrome%20웹%20스토어에서%20설치-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](#)
+[![Chrome 웹 스토어에서 설치](https://img.shields.io/badge/Chrome%20웹%20스토어에서%20설치-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/%EB%84%9B%EC%A7%80%EB%B8%8C%EB%A0%88%EC%9D%B4%ED%81%AC-nudge/gfgkikikfablkcpkjdljmlbboohimobm)
 
 ---
 
