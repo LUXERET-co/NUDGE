@@ -20,7 +20,7 @@ NAVER Whale도 지원합니다.
 
 <img src="https://img.shields.io/badge/Mozilla_Firefox-Supported-FF7139?style=for-the-badge&logo=firefoxbrowser&logoColor=white">
 
-<img src="https://img.shields.io/badge/NAVER_Whale-In_Development-03C75A?style=for-the-badge&logo=naver&logoColor=white">
+<img src="https://img.shields.io/badge/NAVER_Whale-Supported-03C75A?style=for-the-badge&logo=naver&logoColor=white">
 
 </p>
 
