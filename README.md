@@ -178,9 +178,9 @@ youtu.be → youtube.com
 
 ---
 
-## <img src="./icons/whale.svg" width="24"> NAVER Whale (심사중)
+## <img src="./icons/whale.svg" width="24"> NAVER Whale
 
-[![네이버 웨일 스토어에서 설치](https://img.shields.io/badge/네이버%20웨일%20스토어에서%20설치-03C75A?style=for-the-badge&logo=naver&logoColor=white)](#)
+[![네이버 웨일 스토어에서 설치](https://img.shields.io/badge/네이버%20웨일%20스토어에서%20설치-03C75A?style=for-the-badge&logo=naver&logoColor=white)](https://store.whale.naver.com/detail/hhmoiggmkccdgcapkhnicokgjefhdoda)
 
 ---
 
