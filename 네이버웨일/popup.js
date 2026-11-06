@@ -27,15 +27,57 @@ const PRESET_SITES = [
 ];
 
 const CATEGORIES = ["엔터테인먼트", "커뮤니티", "쇼핑/포털", "기타"];
+const DEFAULT_SCHEDULE = { enabled: false, days: [1, 2, 3, 4, 5], start: "09:00", end: "18:00" };
+const DAY_LABELS = [[1, "월"], [2, "화"], [3, "수"], [4, "목"], [5, "금"], [6, "토"], [0, "일"]];
 
 let currentCategory = "all";
+let focusUntil = 0;
+let strictOn = false;
+let schedule = { ...DEFAULT_SCHEDULE };
 
 document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
   loadSites();
   setupAutocomplete();
   setupCategoryTabs();
+  setupFocus();
+  setupSchedule();
+  setupMainTabs();
+  renderStats();
 });
+
+function setupMainTabs() {
+  const tabs = document.querySelectorAll('#mainTabs .tab');
+  const show = (name) => {
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.pane === name));
+    document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === `pane-${name}`));
+    try { localStorage.setItem('lastPane', name); } catch (e) {}
+  };
+  tabs.forEach(t => t.addEventListener('click', () => show(t.dataset.pane)));
+
+  let saved = null;
+  try { saved = localStorage.getItem('lastPane'); } catch (e) {}
+  if (saved && document.getElementById(`pane-${saved}`)) show(saved);
+}
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.stats) renderStats();
+  if (area === 'local' && changes.focusUntil) {
+    focusUntil = changes.focusUntil.newValue || 0;
+    renderFocus();
+    updateStatusPill();
+  }
+});
+
+function isFocusActive() {
+  return focusUntil > Date.now();
+}
+
+function blockedByFocus() {
+  if (!isFocusActive()) return false;
+  showToast('집중 세션 중에는 바꿀 수 없어요');
+  return true;
+}
 
 document.getElementById('addBtn').addEventListener('click', () => addDomain());
 document.getElementById('domainInput').addEventListener('keypress', (e) => {
@@ -49,14 +91,20 @@ document.getElementById('toggleEnabled').addEventListener('click', () => toggleS
 document.getElementById('toggleStrict').addEventListener('click', () => toggleSetting('strictMode'));
 
 document.getElementById('resetBtn').addEventListener('click', () => {
+  if (blockedByFocus()) return;
   const payload = {
     blockList: DEFAULT_BLOCK_LIST,
     enabled: DEFAULT_SETTINGS.enabled,
-    strictMode: DEFAULT_SETTINGS.strictMode
+    strictMode: DEFAULT_SETTINGS.strictMode,
+    schedule: DEFAULT_SCHEDULE
   };
   chrome.storage.sync.set(payload, () => {
     setSwitchState('toggleEnabled', DEFAULT_SETTINGS.enabled);
     setSwitchState('toggleStrict', DEFAULT_SETTINGS.strictMode);
+    strictOn = DEFAULT_SETTINGS.strictMode;
+    schedule = { ...DEFAULT_SCHEDULE };
+    renderSchedule();
+    renderFocus();
     loadSites();
     updateStatusPill();
     showToast('기본값으로 초기화되었습니다');
@@ -212,6 +260,7 @@ function loadSites() {
       btn.textContent = '×';
       btn.title = '삭제';
       btn.addEventListener('click', () => {
+        if (blockedByFocus()) return;
         const updatedList = blockList.filter(d => d !== item);
         chrome.storage.sync.set({ blockList: updatedList }, () => {
           loadSites();
@@ -242,11 +291,15 @@ function updateCategoryCounts(blockList) {
 }
 
 function loadSettings() {
-  chrome.storage.sync.get(["enabled", "strictMode"], (data) => {
+  chrome.storage.sync.get(["enabled", "strictMode", "schedule"], (data) => {
     const enabled = data.enabled !== false;
     const strictMode = !!data.strictMode;
+    strictOn = strictMode;
+    schedule = { ...DEFAULT_SCHEDULE, ...(data.schedule || {}) };
     setSwitchState('toggleEnabled', enabled);
     setSwitchState('toggleStrict', strictMode);
+    renderSchedule();
+    renderFocus();
     updateStatusPill();
   });
 }
@@ -257,13 +310,184 @@ function setSwitchState(id, on) {
 }
 
 function toggleSetting(key) {
+  if (blockedByFocus()) return;
   chrome.storage.sync.get([key], (data) => {
     const current = key === 'enabled' ? data.enabled !== false : !!data.strictMode;
     const next = !current;
     chrome.storage.sync.set({ [key]: next }, () => {
       setSwitchState(key === 'enabled' ? 'toggleEnabled' : 'toggleStrict', next);
+      if (key === 'strictMode') {
+        strictOn = next;
+        renderFocus();
+      }
       updateStatusPill();
     });
+  });
+}
+
+function setupFocus() {
+  document.querySelectorAll('.focus-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const min = parseInt(btn.getAttribute('data-min'), 10);
+      chrome.storage.local.set({ focusUntil: Date.now() + min * 60 * 1000 }, () => {
+        showToast(`${min}분 집중 세션을 시작했어요`);
+      });
+    });
+  });
+
+  document.getElementById('focusStop').addEventListener('click', () => {
+    if (strictOn) return;
+    chrome.storage.local.set({ focusUntil: 0 }, () => showToast('집중 세션을 중단했어요'));
+  });
+
+  chrome.storage.local.get(["focusUntil"], (data) => {
+    focusUntil = data.focusUntil || 0;
+    renderFocus();
+    updateStatusPill();
+  });
+
+  setInterval(() => {
+    if (!focusUntil) return;
+    if (!isFocusActive()) focusUntil = 0;
+    renderFocus();
+    updateStatusPill();
+  }, 1000);
+}
+
+function formatRemaining(ms) {
+  const totalSec = Math.max(0, Math.ceil(ms / 1000));
+  const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
+  const s = String(totalSec % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function renderFocus() {
+  const active = isFocusActive();
+  document.body.classList.toggle('focus-locked', active);
+  document.getElementById('heroCard').classList.toggle('active', active);
+  document.getElementById('focusIdle').style.display = active ? 'none' : 'flex';
+  document.getElementById('focusRunning').style.display = active ? 'flex' : 'none';
+  if (!active) return;
+
+  document.getElementById('focusTime').textContent = formatRemaining(focusUntil - Date.now());
+  document.getElementById('focusStop').style.display = strictOn ? 'none' : 'block';
+  document.getElementById('focusSub').textContent = strictOn
+    ? '엄격 모드라 끝날 때까지 중단할 수 없어요'
+    : '집중하는 중이에요';
+}
+
+function setupSchedule() {
+  const chips = document.getElementById('dayChips');
+  DAY_LABELS.forEach(([value, label]) => {
+    const chip = document.createElement('button');
+    chip.className = 'day-chip';
+    chip.textContent = label;
+    chip.dataset.day = value;
+    chip.addEventListener('click', () => {
+      if (blockedByFocus()) return;
+      const days = new Set(schedule.days);
+      days.has(value) ? days.delete(value) : days.add(value);
+      saveSchedule({ days: [...days] });
+    });
+    chips.appendChild(chip);
+  });
+
+  document.getElementById('toggleSchedule').addEventListener('click', () => {
+    if (blockedByFocus()) return;
+    saveSchedule({ enabled: !schedule.enabled });
+  });
+
+  ['scheduleStart', 'scheduleEnd'].forEach(id => {
+    document.getElementById(id).addEventListener('change', (e) => {
+      if (blockedByFocus()) {
+        renderSchedule();
+        return;
+      }
+      if (!e.target.value) return renderSchedule();
+      saveSchedule({ [id === 'scheduleStart' ? 'start' : 'end']: e.target.value });
+    });
+  });
+
+  renderSchedule();
+}
+
+function saveSchedule(patch) {
+  schedule = { ...schedule, ...patch };
+  chrome.storage.sync.set({ schedule }, () => {
+    renderSchedule();
+    updateStatusPill();
+  });
+}
+
+function renderSchedule() {
+  setSwitchState('toggleSchedule', schedule.enabled);
+  document.getElementById('scheduleBox').classList.toggle('show', schedule.enabled);
+  document.querySelectorAll('.day-chip').forEach(chip => {
+    chip.classList.toggle('on', schedule.days.includes(Number(chip.dataset.day)));
+  });
+  document.getElementById('scheduleStart').value = schedule.start;
+  document.getElementById('scheduleEnd').value = schedule.end;
+}
+
+function toMinutes(hhmm) {
+  const [h, m] = (hhmm || "0:0").split(":").map(Number);
+  return h * 60 + m;
+}
+
+// background.js 의 isInSchedule 과 같은 규칙
+function isInSchedule(sch, now) {
+  if (!sch || !sch.enabled) return true;
+  const days = sch.days || [];
+  const day = now.getDay();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const start = toMinutes(sch.start);
+  const end = toMinutes(sch.end);
+
+  if (start === end) return days.includes(day);
+  if (start < end) return days.includes(day) && mins >= start && mins < end;
+  if (mins >= start) return days.includes(day);
+  if (mins < end) return days.includes((day + 6) % 7);
+  return false;
+}
+
+function scheduleSummary(sch) {
+  const order = DAY_LABELS.filter(([v]) => sch.days.includes(v)).map(([, l]) => l);
+  let days = order.join('');
+  if (order.length === 7) days = '매일';
+  else if (days === '월화수목금') days = '평일';
+  else if (days === '토일') days = '주말';
+  return `${days || '요일 미선택'} ${sch.start}~${sch.end}`;
+}
+
+function todayKey(d = new Date()) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function siteLabel(key) {
+  const preset = PRESET_SITES.find(p => p.domain === key || p.keyword === key);
+  return preset ? preset.keyword : key;
+}
+
+function renderStats() {
+  chrome.storage.local.get(["stats"], ({ stats }) => {
+    const daily = (stats && stats.daily) || {};
+    const totals = (stats && stats.totals) || {};
+    const today = daily[todayKey()] || {};
+
+    document.getElementById('statBlocked').textContent = today.blocked || 0;
+    document.getElementById('statReturned').textContent = today.returned || 0;
+    document.getElementById('statUnlocked').textContent = today.unlocked || 0;
+
+    const foot = document.getElementById('statsFoot');
+    if (!totals.blocked) {
+      foot.textContent = '아직 기록이 없어요';
+      return;
+    }
+
+    const sites = Object.entries(today.sites || {}).sort((a, b) => b[1] - a[1]);
+    const top = sites.length ? ` · 오늘 가장 많이 막은 곳: ${siteLabel(sites[0][0])} ${sites[0][1]}회` : '';
+    foot.textContent = `누적 ${totals.blocked}회 차단${top}`;
   });
 }
 
@@ -277,7 +501,15 @@ function updateStatusPill(knownCount = null) {
     const main = document.getElementById('statusMain');
     const sub = document.getElementById('statusSub');
 
-    if (enabled) {
+    if (isFocusActive()) {
+      pill.classList.add('active');
+      main.textContent = '집중 세션 중';
+      sub.textContent = `${formatRemaining(focusUntil - Date.now())} 남음 · ${count}개 사이트 해제 불가`;
+    } else if (enabled && !isInSchedule(schedule, new Date())) {
+      pill.classList.remove('active');
+      main.textContent = '예약 시간 외';
+      sub.textContent = `${scheduleSummary(schedule)}에만 차단 · 지금은 허용 중`;
+    } else if (enabled) {
       pill.classList.add('active');
       main.textContent = strictMode ? '차단 중 (엄격 모드)' : '차단 중';
       sub.textContent = `${count}개 사이트 · 관련 검색어도 함께 차단`;

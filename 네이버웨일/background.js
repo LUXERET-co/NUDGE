@@ -58,33 +58,114 @@ const SEARCH_ENGINES = [
   { hostPattern: /(^|\.)search\.daum\.net$/, param: "q" }
 ];
 
-const unlockedTabs = new Map();
 const DEFAULT_UNLOCK_DURATION_MIN = 5;
+const DEFAULT_SCHEDULE = { enabled: false, days: [1, 2, 3, 4, 5], start: "09:00", end: "18:00" };
+const STATS_KEEP_DAYS = 30;
+
+// 서비스 워커는 잠들면 메모리가 사라지므로, 허용 시간은 storage에 저장한다.
+const unlockStore = chrome.storage.session || chrome.storage.local;
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.get(["blockList", "enabled", "strictMode"], (data) => {
+  chrome.storage.sync.get(["blockList", "enabled", "strictMode", "schedule"], (data) => {
     const patch = {};
     if (!data.blockList) patch.blockList = DEFAULT_BLOCK_LIST;
     if (data.enabled === undefined) patch.enabled = true;
     if (data.strictMode === undefined) patch.strictMode = false;
+    if (!data.schedule) patch.schedule = DEFAULT_SCHEDULE;
     if (Object.keys(patch).length) chrome.storage.sync.set(patch);
   });
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "UNLOCK_TAB" && sender.tab) {
-    const durationMs = (message.durationMin || DEFAULT_UNLOCK_DURATION_MIN) * 60 * 1000;
-    const key = message.key || getHost(message.targetUrl);
-
-    unlockedTabs.set(sender.tab.id, {
-      key: key,
-      expires: Date.now() + durationMs
-    });
-
-    sendResponse({ status: "success" });
+    unlockTab(sender.tab.id, message).then(sendResponse);
+    return true;
   }
-  return true;
+  if (message.type === "RECORD_STAT" && message.stat === "returned") {
+    recordStat("returned");
+  }
+  return false;
 });
+
+chrome.tabs.onRemoved.addListener(async (tabId) => {
+  const unlocks = await getUnlocks();
+  if (unlocks[tabId]) {
+    delete unlocks[tabId];
+    await unlockStore.set({ unlocks });
+  }
+});
+
+async function unlockTab(tabId, message) {
+  if (await isFocusActive()) return { status: "denied" };
+
+  const durationMs = (message.durationMin || DEFAULT_UNLOCK_DURATION_MIN) * 60 * 1000;
+  const unlocks = await getUnlocks();
+  unlocks[tabId] = {
+    key: message.key || getHost(message.targetUrl),
+    expires: Date.now() + durationMs
+  };
+  await unlockStore.set({ unlocks });
+  recordStat("unlocked");
+  return { status: "success" };
+}
+
+async function getUnlocks() {
+  const data = await unlockStore.get("unlocks");
+  return data.unlocks || {};
+}
+
+async function isFocusActive() {
+  const { focusUntil = 0 } = await chrome.storage.local.get("focusUntil");
+  return focusUntil > Date.now();
+}
+
+function toMinutes(hhmm) {
+  const [h, m] = (hhmm || "0:0").split(":").map(Number);
+  return h * 60 + m;
+}
+
+function isInSchedule(schedule, now) {
+  if (!schedule || !schedule.enabled) return true;
+  const days = schedule.days || [];
+  const day = now.getDay();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const start = toMinutes(schedule.start);
+  const end = toMinutes(schedule.end);
+
+  if (start === end) return days.includes(day);
+  if (start < end) return days.includes(day) && mins >= start && mins < end;
+  // 자정을 넘기는 시간대 (예: 22:00~02:00): 자정 이후는 전날 요일 기준
+  if (mins >= start) return days.includes(day);
+  if (mins < end) return days.includes((day + 6) % 7);
+  return false;
+}
+
+function todayKey(d = new Date()) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// 동시에 여러 탭에서 기록해도 값이 덮어써지지 않도록 순서대로 처리한다.
+let statsQueue = Promise.resolve();
+function recordStat(type, key = null) {
+  statsQueue = statsQueue.then(async () => {
+    const { stats = {} } = await chrome.storage.local.get("stats");
+    const daily = stats.daily || {};
+    const totals = stats.totals || { blocked: 0, returned: 0, unlocked: 0 };
+    const day = todayKey();
+    const entry = daily[day] || { blocked: 0, returned: 0, unlocked: 0, sites: {} };
+
+    entry[type] = (entry[type] || 0) + 1;
+    totals[type] = (totals[type] || 0) + 1;
+    if (key) entry.sites[key] = (entry.sites[key] || 0) + 1;
+    daily[day] = entry;
+
+    const days = Object.keys(daily).sort();
+    days.slice(0, Math.max(0, days.length - STATS_KEEP_DAYS)).forEach(d => delete daily[d]);
+
+    await chrome.storage.local.set({ stats: { daily, totals } });
+  }).catch(() => {});
+}
 
 function getHost(urlStr) {
   try {
@@ -193,38 +274,47 @@ function getDisplayName(key) {
   return key;
 }
 
-function handleNavigation(details) {
+async function handleNavigation(details) {
   if (details.frameId !== 0) return;
   const url = details.url;
 
   if (url.startsWith(chrome.runtime.getURL(""))) return;
 
-  chrome.storage.sync.get(["blockList", "enabled", "strictMode"], (data) => {
+  const data = await chrome.storage.sync.get(["blockList", "enabled", "strictMode", "schedule"]);
+  const focusActive = await isFocusActive();
+
+  // 집중 세션 중에는 차단 꺼짐·예약 시간과 상관없이 무조건 차단한다.
+  if (!focusActive) {
     if (data.enabled === false) return;
+    if (!isInSchedule(data.schedule, new Date())) return;
+  }
 
-    const blockList = data.blockList && data.blockList.length ? data.blockList : DEFAULT_BLOCK_LIST;
-    const matched = classifyNavigation(url, blockList);
-    if (!matched) return;
+  const blockList = data.blockList && data.blockList.length ? data.blockList : DEFAULT_BLOCK_LIST;
+  const matched = classifyNavigation(url, blockList);
+  if (!matched) return;
 
-    const unlock = unlockedTabs.get(details.tabId);
+  if (!focusActive) {
+    const unlocks = await getUnlocks();
+    const unlock = unlocks[details.tabId];
     if (unlock) {
       if (Date.now() < unlock.expires) {
         if (unlock.key === matched.key) return;
       } else {
-        unlockedTabs.delete(details.tabId);
+        delete unlocks[details.tabId];
+        await unlockStore.set({ unlocks });
       }
     }
+  }
 
-    const siteName = getDisplayName(matched.key);
-    const strict = data.strictMode ? "1" : "0";
-    const blockPageUrl = chrome.runtime.getURL(
-      `block.html?target=${encodeURIComponent(url)}&name=${encodeURIComponent(siteName)}&strict=${strict}&key=${encodeURIComponent(matched.key)}&source=${matched.source}`
-    );
+  const siteName = getDisplayName(matched.key);
+  const strict = data.strictMode ? "1" : "0";
+  const focus = focusActive ? "1" : "0";
+  const blockPageUrl = chrome.runtime.getURL(
+    `block.html?target=${encodeURIComponent(url)}&name=${encodeURIComponent(siteName)}&strict=${strict}&focus=${focus}&key=${encodeURIComponent(matched.key)}&source=${matched.source}`
+  );
 
-    if (details.url.startsWith(chrome.runtime.getURL("block.html"))) return;
-
-    chrome.tabs.update(details.tabId, { url: blockPageUrl });
-  });
+  recordStat("blocked", matched.key);
+  chrome.tabs.update(details.tabId, { url: blockPageUrl });
 }
 
 chrome.webNavigation.onBeforeNavigate.addListener(handleNavigation, {
