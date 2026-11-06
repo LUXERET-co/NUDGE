@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const targetUrl = urlParams.get('target');
   const siteName = urlParams.get('name');
   const strict = urlParams.get('strict') === '1';
+  const focus = urlParams.get('focus') === '1';
   const key = urlParams.get('key');
   const source = urlParams.get('source');
 
@@ -132,13 +133,62 @@ document.addEventListener("DOMContentLoaded", () => {
 "\"자신을 이기는 사람이 가장 강한 사람이다.\"",
 "\"지금 견디는 시간이 미래를 만든다.\"",
 "\"성장은 불편함을 견디는 능력에서 시작된다.\"",
-"\"오늘의 인내는 내일의 실력이 된다.\""
+"\"오늘의 인내는 내일의 실력이 된다.\"",
 
-  
+"\"우리가 반복적으로 하는 행동이 곧 우리 자신이다. 그러므로 탁월함은 행동이 아니라 습관이다.\" — 윌 듀랜트",
+"\"집중한다는 것은 '아니오'라고 말하는 것이다.\" — 스티브 잡스",
+"\"잃어버린 시간은 결코 다시 찾을 수 없다.\" — 벤저민 프랭클린",
+"\"전혀 할 필요가 없는 일을 효율적으로 하는 것만큼 쓸모없는 일은 없다.\" — 피터 드러커",
+"\"깊이 몰입하는 능력은 점점 희소해지고, 그래서 점점 더 가치 있어지고 있다.\" — 칼 뉴포트",
+"\"아는 것만으로는 부족하다. 적용해야 한다. 의지만으로는 부족하다. 실행해야 한다.\" — 괴테",
+"\"물방울이 바위를 뚫는 것은 힘이 아니라 끈기 때문이다.\" — 오비디우스",
+"\"인내는 쓰다. 그러나 그 열매는 달다.\" — 장 자크 루소",
+"\"천천히 가는 것을 두려워하지 말고, 멈추는 것을 두려워하라.\" — 중국 속담",
+"\"두 마리 토끼를 쫓는 자는 한 마리도 잡지 못한다.\" — 속담",
+"\"가장 어두운 시간은 해 뜨기 직전이다.\" — 토머스 풀러",
+"\"우리는 무엇을 아느냐가 아니라 무엇을 하느냐로 평가받는다.\" — 존 러스킨",
+"\"휴식은 게으름이 아니다. 하지만 도피는 휴식이 아니다.\"",
+"\"피드를 내리는 손가락을 멈추면, 인생이 앞으로 나아간다.\"",
+"\"알고리즘은 당신의 시간을 원한다. 당신의 시간은 당신의 것이다.\"",
+"\"딱 한 편만, 딱 한 번만이 오늘을 통째로 가져간다.\"",
+"\"지금 보려던 그 영상은 내일도 그 자리에 있다. 오늘의 기회는 아니다.\"",
+"\"무한 스크롤에는 끝이 없지만, 오늘 하루에는 끝이 있다.\"",
+"\"알림을 끄는 순간, 내 목소리가 들리기 시작한다.\"",
+"\"남의 하이라이트를 보느라 내 하루를 놓치지 말자.\"",
+"\"심심함은 창의력이 시작되는 자리다.\"",
+"\"지금 이 탭을 닫으면, 미래의 내가 고마워한다.\"",
+"\"딴짓은 쉬어가는 게 아니라 미뤄두는 것이다.\"",
+"\"집중력은 근육이다. 오늘 참은 만큼 내일 더 강해진다.\"",
+"\"5분만 더 하면 시작할 이유가, 5분만 쉬면 멈출 이유가 생긴다.\"",
+"\"해야 할 일 하나를 끝내는 것이 할 일 열 개를 계획하는 것보다 낫다.\"",
+"\"마음이 산만할 때는 가장 작은 일부터 하나 끝내라.\"",
+"\"의욕을 기다리지 말고 움직여라. 의욕은 움직이는 사람에게 온다.\"",
+"\"하기 싫은 일을 먼저 끝내면, 나머지 하루가 가벼워진다.\"",
+"\"지금 미루는 일은 사라지지 않는다. 더 무거워져서 돌아올 뿐이다.\"",
+"\"오늘 하루는 다시 오지 않는 단 한 번의 기회다.\"",
+"\"잘하는 사람보다 끝까지 하는 사람이 더 멀리 간다.\"",
+"\"하루를 바꾸는 건 거창한 결심이 아니라 작은 멈춤이다.\"",
+"\"유혹을 이긴 횟수가 쌓이면 그것이 곧 실력이 된다.\"",
+"\"내가 쓴 시간이 곧 내가 된다.\"",
+"\"멈춰서 숨 한 번 고르는 것, 그것이 넛지다.\"",
+"\"충동은 10초면 지나간다. 지금 그 10초를 버텨보자.\"",
+"\"진짜 쉬고 싶다면 화면을 끄고 눈을 감자.\"",
+"\"목표가 흐려질 때는 왜 시작했는지 떠올려라.\"",
+"\"계획은 종이 위에 있고, 성과는 실행 위에 있다.\"",
+"\"내일의 나는 오늘의 나를 믿고 있다.\"",
+"\"집중한 한 시간은 흩어진 하루보다 많은 것을 남긴다.\"",
+"\"지금 하는 일을 사랑하지 않아도 괜찮다. 끝내는 나를 사랑하면 된다.\"",
+"\"작은 약속을 지키는 하루가 큰 자신감을 만든다.\""
 ];
 
-document.getElementById('quoteBox').innerText =
-  quotes[Math.floor(Math.random() * quotes.length)];
+// 직전에 본 명언은 연속으로 나오지 않게 한다.
+let quoteIndex = Math.floor(Math.random() * quotes.length);
+try {
+  const last = parseInt(localStorage.getItem('lastQuoteIndex'), 10);
+  if (quotes.length > 1 && quoteIndex === last) quoteIndex = (quoteIndex + 1) % quotes.length;
+  localStorage.setItem('lastQuoteIndex', String(quoteIndex));
+} catch (e) {}
+document.getElementById('quoteBox').innerText = quotes[quoteIndex];
 
   const digits = strict ? 4 : 3;
   const min = Math.pow(10, digits - 1);
@@ -155,12 +205,47 @@ document.getElementById('quoteBox').innerText =
   const strictNote = document.getElementById('strictNote');
   const unlockDurationSelect = document.getElementById('unlockDuration');
 
-  if (strict) {
+  if (focus) {
+    showFocusMode();
+  } else if (strict) {
     backLink.style.display = 'none';
     strictNote.style.display = 'block';
   }
 
+  function showFocusMode() {
+    document.getElementById('gameBox').style.display = 'none';
+    document.getElementById('timeSettingBox').style.display = 'none';
+    document.getElementById('focusBox').style.display = 'block';
+    unlockBtn.style.display = 'none';
+
+    const remainingEl = document.getElementById('focusRemaining');
+    const focusDesc = document.getElementById('focusDesc');
+
+    chrome.storage.local.get(['focusUntil'], ({ focusUntil = 0 }) => {
+      const tick = () => {
+        const left = focusUntil - Date.now();
+        if (left <= 0) {
+          clearInterval(timer);
+          remainingEl.innerText = '00:00';
+          focusDesc.innerText = '집중 세션이 끝났어요. 수고했어요!';
+          unlockBtn.style.display = 'block';
+          unlockBtn.innerText = '계속 이동하기';
+          // 세션이 끝나면 평소 규칙대로 다시 판단하도록 원래 주소로 보낸다.
+          unlockBtn.onclick = () => targetUrl ? window.location.replace(targetUrl) : goBackSafely();
+          return;
+        }
+        const totalSec = Math.ceil(left / 1000);
+        const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
+        const s = String(totalSec % 60).padStart(2, '0');
+        remainingEl.innerText = `${m}:${s}`;
+      };
+      const timer = setInterval(tick, 1000);
+      tick();
+    });
+  }
+
   const tryUnlock = () => {
+    if (focus) return;
     const userValue = gameInput.value.trim();
 
     if (userValue === reversedNum) {
@@ -171,8 +256,15 @@ document.getElementById('quoteBox').innerText =
       const durationMin = unlockDurationSelect ? parseInt(unlockDurationSelect.value, 10) : 5;
 
       if (targetUrl) {
-        chrome.runtime.sendMessage({ type: "UNLOCK_TAB", targetUrl, durationMin, key }, () => {
+        chrome.runtime.sendMessage({ type: "UNLOCK_TAB", targetUrl, durationMin, key }, (res) => {
           const err = chrome.runtime.lastError;
+          // 그 사이 집중 세션이 시작됐다면 해제 대신 집중 화면을 보여준다.
+          if (res && res.status === "denied") {
+            const params = new URLSearchParams(window.location.search);
+            params.set('focus', '1');
+            window.location.replace(`${window.location.pathname}?${params}`);
+            return;
+          }
           window.location.replace(targetUrl);
         });
       } else {
@@ -190,8 +282,11 @@ document.getElementById('quoteBox').innerText =
     if (e.key === 'Enter') tryUnlock();
   });
 
-  if (!strict) {
-    backLink.addEventListener('click', goBackSafely);
+  if (focus || !strict) {
+    backLink.addEventListener('click', () => {
+      chrome.runtime.sendMessage({ type: "RECORD_STAT", stat: "returned" }, () => chrome.runtime.lastError);
+      goBackSafely();
+    });
   }
 
   function goBackSafely() {
@@ -199,10 +294,19 @@ document.getElementById('quoteBox').innerText =
       if (window.history.length > 2) {
         window.history.go(-2);
       } else {
-        chrome.tabs.create({ url: 'chrome://newtab' });
+        openNewTabAndClose();
       }
     } catch (e) {
-      chrome.tabs.create({ url: 'chrome://newtab' });
+      openNewTabAndClose();
     }
+  }
+
+  // chrome://newtab 은 파이어폭스에서 열 수 없으므로, 주소 없이 새 탭을 열어 브라우저 기본 새 탭을 쓴다.
+  function openNewTabAndClose() {
+    chrome.tabs.getCurrent((tab) => {
+      chrome.tabs.create({}, () => {
+        if (tab) chrome.tabs.remove(tab.id);
+      });
+    });
   }
 });

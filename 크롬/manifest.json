@@ -1,10 +1,9 @@
 {
   "manifest_version": 3,
   "name": "넛지브레이크 NUDGE",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "방해는 멀리, 집중은 가까이",
   "permissions": [
-    "tabs",
     "storage",
     "webNavigation"
   ],

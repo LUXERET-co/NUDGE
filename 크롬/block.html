@@ -14,8 +14,14 @@
     font-family: 'Pretendard', sans-serif;
   }
   .card {
-    width: 400px; text-align: center; padding: 48px 36px;
+    width: 420px; max-width: calc(100vw - 32px); text-align: center; padding: 44px 36px 36px;
+    background: #0B0B0B; border: 1px solid #1F1F1F; border-radius: 28px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
   }
+  .quote-box, .focus-box { border-radius: 16px !important; }
+  .game-input, .unlock-btn { border-radius: 12px !important; }
+  .time-setting-box { border-radius: 14px !important; }
+  #unlockDuration { border-radius: 10px !important; }
   .icon {
     width: 56px; height: 56px; margin: 0 auto 24px; border-radius: 50%;
     background: rgba(255, 176, 32, 0.1); border: 2px solid var(--accent);
@@ -57,6 +63,16 @@
   .strict-note {
     margin-top: 22px; font-size: 11.5px; color: #4E4E4E;
   }
+  .focus-box {
+    display: none; background: #111111; border: 1px solid var(--accent);
+    border-radius: 10px; padding: 18px; margin-bottom: 8px;
+  }
+  .focus-label { font-size: 12px; color: #8A8A8A; margin: 0 0 6px; }
+  .focus-remaining {
+    font-size: 32px; font-weight: 800; color: var(--accent);
+    font-variant-numeric: tabular-nums; letter-spacing: 1px;
+  }
+  .focus-desc { font-size: 12px; color: #6A6A6A; margin: 8px 0 0; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -67,13 +83,19 @@
 
     <div class="quote-box" id="quoteBox"></div>
 
-    <div class="game-box">
+    <div class="focus-box" id="focusBox">
+      <p class="focus-label">집중 세션 종료까지</p>
+      <div class="focus-remaining" id="focusRemaining">--:--</div>
+      <p class="focus-desc" id="focusDesc">집중 세션 중에는 숫자 게임으로도 해제할 수 없어요.</p>
+    </div>
+
+    <div class="game-box" id="gameBox">
       <p class="game-label">아래칸에 숫자를 거꾸로 입력하세요&nbsp; <strong id="targetNum">···</strong></p>
       <input type="text" id="gameInput" class="game-input" placeholder="입력하기" autocomplete="off" inputmode="numeric">
       <div class="error-msg" id="errorMsg">틀렸습니다. 다시 시도하세요.</div>
     </div>
 
-    <div class="time-setting-box" style="margin-bottom: 16px; text-align: left; background: #141414; padding: 12px 14px; border-radius: 10px; border: 1.5px solid #2E2E2E;">
+    <div class="time-setting-box" id="timeSettingBox" style="margin-bottom: 16px; text-align: left; background: #141414; padding: 12px 14px; border-radius: 10px; border: 1.5px solid #2E2E2E;">
       <label for="unlockDuration" style="font-size: 12.5px; color: #ABABAB; font-weight: 600; display: block; margin-bottom: 6px;">이후 허용 시간 유지</label>
       <select id="unlockDuration" style="width: 100%; padding: 10px; background: #0A0A0A; border: 1.5px solid #3E3E3E; border-radius: 8px; color: #FFFFFF; font-size: 13.5px; outline: none; font-family: 'Pretendard', sans-serif; font-weight: 600; cursor: pointer;">
         <option value="3">3분 동안 차단 안 함</option>
